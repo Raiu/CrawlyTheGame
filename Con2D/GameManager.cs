@@ -14,12 +14,16 @@ public class GameManager
 
     public GameManager()
     {
-        _map = new Map(10, 10);
+        _map = new StaticMapGenerator().GenerateMap(15, 15);
         _serializedMap = Serializer.Serialize(_map);
         
         _entities = new();
+
         _player = CreatePlayer(_map, _entities, '@');
-        _entities.Add(_player);    
+        _entities.Add(_player); 
+
+        _entities.Add(CreateEnemey(_map, _entities, 'E'));
+        _entities.Add(CreateEnemey(_map, _entities, 'E'));
     }
 
 
@@ -31,11 +35,10 @@ public class GameManager
             //if (iter > 20) break;
 
             Map map = Serializer.Deserialize(_serializedMap);
-            map.Tiles[0, 0].Type = TileType.Wall;
-            map.Tiles[0, 1].Type = TileType.Wall;
-            map.Tiles[0, 2].Type = TileType.Wall;
 
             map.Tiles[_player.PosX, _player.PosY].UpdateEnity(_player.Body);
+
+            map = UpdateEntities(_entities, map);
 
             AnsiConsole.Clear();
 
@@ -43,8 +46,8 @@ public class GameManager
 
             var layout = new Layout("Root")
                 .SplitColumns(
-                    new Layout("Left"),
-                    new Layout("Right"));
+                    new Layout("Left").MinimumSize(100),
+                    new Layout("Right").MinimumSize(30));
 
             layout["Left"].Update(
                 new Panel(
@@ -103,6 +106,11 @@ public class GameManager
         }
     }
 
+    public void CombatCheck()
+    {
+
+    }
+
     public bool ValidMove(int x, int y, Map map, List<Entity> entities)
     {
         if (!IsPositionWithinMap(x, y, map.Width, map.Height))
@@ -122,31 +130,58 @@ public class GameManager
         return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight;
     }
 
-    private void UpdateEntities()
+    private Map UpdateEntities(List<Entity> entities, Map map)
     {
-        throw new NotImplementedException();
+        entities.Where(e => e.IsActive).ToList().ForEach(e => 
+                map.Tiles[e.PosX, e.PosY].UpdateEnity(e.Body));
+        return map;
     }
 
 
-    private Player CreatePlayer(Map map, List<Entity> entities, char v)
+    private Player CreatePlayer(Map map, List<Entity> entities, char body)
     {
         var (posX, posY) = GenerateRandomPosition(map);
         var player = new Player(posX, posY);
-        player.Body = v;
+        player.Body = body;
         return player;
+    }
+
+    private Enemy CreateEnemey(Map map, List<Entity> entities, char body)
+    {
+        var (posX, posY) = GenerateRandomPosition(map);
+        var enemy = new Enemy(posX, posY);
+        enemy.Body = body;
+        return enemy;
     }
 
 
     private (int x, int y) GenerateRandomPosition(Map map)
     {
-        if (ValidEntityPosition(map, 2, 2))
-            return (1, 2);
-        return (-1, -1);
+        int posX;
+        int posY;
+
+        while (true)
+        {
+            var random = new Random();
+            posX = random.Next(0, map.Width - 1);
+            posY = random.Next(0, map.Height - 1);
+
+            if (map.Tiles[posX, posY].Type == TileType.Wall)
+                continue;
+
+            if (!ValidEntityPosition(_entities, 2, 2))
+                continue;
+
+            break;
+        }
+        return (posX, posY);
     }
 
 
-    private bool ValidEntityPosition(Map map, int x, int y)
+    private bool ValidEntityPosition(List<Entity> entities, int x, int y)
     {
+        if (entities.Any(e => e.PosX == x && e.PosY == y))
+            return false;
         return true;
     }
 
@@ -160,27 +195,47 @@ public class GameManager
             {
                 sb.Append(PrintTileSpectre(map.Tiles[x, y], x, y));
             }
-            sb.Append("\n\n");
+            sb.Append("\n");
         }
 
         return sb.ToString();
     }
-
 
     private string PrintTileSpectre(Tile tile, int x, int y)
     {
         switch (tile.Type)
         {
             case TileType.Floor:
-                return $" [default on lime]{x},{y}[/] ";
+                return $"[lime on lime]▒▒[/]";
             case TileType.Wall:
-                return $" [default on grey]{x},{y}[/] ";
+                return $"[grey on grey]██[/]";
             case TileType.EntityFloor:
-                return $" [red on green]{x}*{y}[/] ";
+                return $"[red on green] {tile.Body}[/]";
             case TileType.EntityNone:
-                return $" [red on green]{x}*{y}[/] ";
+                return $"[red on green] {tile.Body}[/]";
             default:
-                return $" [default on lime]{x},{y}[/] ";
+                return $"[lime on lime]▒[/]";
+        }
+    }
+
+
+    private string PrintTileSpectreDebug(Tile tile, int x, int y)
+    {
+        var xString = x.ToString("00");
+        var yString = y.ToString("00");
+
+        switch (tile.Type)
+        {
+            case TileType.Floor:
+                return $" [default on lime]{xString},{yString}[/]";
+            case TileType.Wall:
+                return $" [default on grey]{xString},{yString}[/]";
+            case TileType.EntityFloor:
+                return $" [red on green]{xString}*{yString}[/]";
+            case TileType.EntityNone:
+                return $" [red on green]{xString}*{yString}[/]";
+            default:
+                return $" [default on lime]{xString},{yString}[/]";
         }
     }
 
