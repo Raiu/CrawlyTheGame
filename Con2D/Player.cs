@@ -1,5 +1,4 @@
 ﻿namespace Con2D;
-
 public class Player : Entity
 {
     public Player(int posX, int posY)

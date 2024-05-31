@@ -1,7 +1,7 @@
-﻿
+﻿using System.Text;
+using Spectre.Console;
 
 namespace Con2D;
-
 public class GameManager
 {
     private JsonMapSerializer Serializer = new JsonMapSerializer();
@@ -28,7 +28,7 @@ public class GameManager
         var iter = 0;
         while (true)
         {    
-            if (iter > 20) break;
+            //if (iter > 20) break;
 
             Map map = Serializer.Deserialize(_serializedMap);
             map.Tiles[0, 0].Type = TileType.Wall;
@@ -37,19 +37,32 @@ public class GameManager
 
             map.Tiles[_player.PosX, _player.PosY].UpdateEnity(_player.Body);
 
-            Console.Clear();
+            AnsiConsole.Clear();
 
-            RenderDebug(map);
+            var renderedMap = RenderMapSpectre(map);
 
-            Console.WriteLine($"{map.Width}x{map.Height}");
-            Console.WriteLine($"Player: X{_player.PosX}, Y{_player.PosY}");
+            var layout = new Layout("Root")
+                .SplitColumns(
+                    new Layout("Left"),
+                    new Layout("Right"));
 
-            MovePlayer();
+            layout["Left"].Update(
+                new Panel(
+                    Align.Center(
+                        new Markup(renderedMap), VerticalAlignment.Middle))
+                    .Expand());
+            layout["Right"].Update( new Panel( Align.Center( new Markup($"Player: X{_player.PosX}, Y{_player.PosY}") ) ) );
+
+            AnsiConsole.Write(layout);
+
+            //Console.WriteLine($"Player: X{_player.PosX}, Y{_player.PosY}");
+
+            MovePlayer(map);
             iter++;
         }
     }
 
-    private void MovePlayer()
+    private void MovePlayer(Map map)
     {
         Input input = new Input();
         while (true)
@@ -61,17 +74,28 @@ public class GameManager
             switch (inputKey)
             {
                 case InputKey.Up:
+                    if (!ValidMove(_player.PosX, _player.PosY - 1, map, _entities))
+                        break;
                     _player.Move(_player.PosX, _player.PosY - 1);
                     return;
                 case InputKey.Down:
+                    if (!ValidMove(_player.PosX, _player.PosY + 1, map, _entities))
+                        break; 
                     _player.Move(_player.PosX, _player.PosY + 1);
                     return;
                 case InputKey.Left:
+                    if (!ValidMove(_player.PosX - 1, _player.PosY, map, _entities))
+                        break;
                     _player.Move(_player.PosX - 1, _player.PosY);
                     return;
                 case InputKey.Right:
+                    if (!ValidMove(_player.PosX + 1, _player.PosY, map, _entities))
+                        break;
                     _player.Move(_player.PosX + 1, _player.PosY);
                     return;
+                case InputKey.Space:
+                    Environment.Exit(1);
+                    break;
                 default:
                     break;
 
@@ -79,9 +103,28 @@ public class GameManager
         }
     }
 
+    public bool ValidMove(int x, int y, Map map, List<Entity> entities)
+    {
+        if (!IsPositionWithinMap(x, y, map.Width, map.Height))
+            return false;
+
+        if (map.Tiles[x, y].Type == TileType.Wall)
+            return false;
+
+        if (entities.Any(e => e.PosX == x && e.PosY == y))
+            return false;
+
+        return true;                
+    }
+
+    public bool IsPositionWithinMap(int x, int y, int mapWidth, int mapHeight)
+    {
+        return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight;
+    }
+
     private void UpdateEntities()
     {
-
+        throw new NotImplementedException();
     }
 
 
@@ -105,6 +148,40 @@ public class GameManager
     private bool ValidEntityPosition(Map map, int x, int y)
     {
         return true;
+    }
+
+    public string RenderMapSpectre(Map map)
+    { 
+        var sb = new StringBuilder();
+        
+        for (int y = 0; y < map.Height; y++)
+        {
+            for (int x = 0; x < map.Width; x++)
+            {
+                sb.Append(PrintTileSpectre(map.Tiles[x, y], x, y));
+            }
+            sb.Append("\n\n");
+        }
+
+        return sb.ToString();
+    }
+
+
+    private string PrintTileSpectre(Tile tile, int x, int y)
+    {
+        switch (tile.Type)
+        {
+            case TileType.Floor:
+                return $" [default on lime]{x},{y}[/] ";
+            case TileType.Wall:
+                return $" [default on grey]{x},{y}[/] ";
+            case TileType.EntityFloor:
+                return $" [red on green]{x}*{y}[/] ";
+            case TileType.EntityNone:
+                return $" [red on green]{x}*{y}[/] ";
+            default:
+                return $" [default on lime]{x},{y}[/] ";
+        }
     }
 
 
