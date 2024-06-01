@@ -32,6 +32,14 @@ public class GameManager
     public GameManager()
     {
         EM = new EntityManager();
+        var enemy = (Enemy)EM.Add(EntityType.Enemy);
+        var hero = EM.Hero;
+
+
+        RunCombat(hero, enemy);
+
+        /*
+        EM = new EntityManager();
         _map = new StaticMapGenerator().GenerateMap(30, 30);
         _serializedMap = MapSerializer.Serialize(_map);
         
@@ -42,6 +50,7 @@ public class GameManager
 
         _entities.Add(CreateEnemey(_map, _entities, 'E'));
         _entities.Add(CreateEnemey(_map, _entities, 'E'));   
+        */
     }
 
     public (EntityManager, Map) NewGame()
@@ -69,6 +78,82 @@ public class GameManager
             render.DrawWorld();
 
             MovePlayer(map);
+        }
+    }
+
+    public void RunCombat(Player hero, Enemy enemy)
+    {
+        var menu = new Dictionary<string, bool>(){
+            {"Attack", true},
+            {"Defend", false},
+            {"Heal", false},
+            {"Escape", false}};
+
+        bool action = false;
+        
+
+        while (true)
+        {
+            if (action)
+            {
+
+            }
+
+            var render = new RenderCombat(hero, enemy, menu);
+            render.Draw();
+            
+            
+            NavigateCombatMenu(menu);
+        }
+    }
+
+    private void NavigateCombatMenu(Dictionary<string, bool> menu)
+    {
+        Input input = new Input();
+
+        while (true)
+        {
+            var inputKey = input.ReadGameInput();
+
+            if (inputKey == InputKey.Up)
+            {
+                CycleMenu(menu, -1);
+                break;
+            }
+            else if (inputKey == InputKey.Down)
+            {
+                CycleMenu(menu, 1);
+                break;
+            }
+        }
+
+    }
+
+    private Dictionary<T, bool> CycleMenu<T>(Dictionary<T, bool> menu, int steps) where T : notnull
+    {
+        var index = menu.Values.ToList().IndexOf(true);
+
+        if (index == -1)
+            throw new InvalidOperationException("No item with value 'true' found in the menu.");
+
+        var keys = menu.Keys.ToList();
+        menu[keys[index]] = false;
+        
+        var newIndex = (index + steps) % keys.Count;
+        newIndex = (newIndex < 0) ? newIndex + keys.Count : newIndex;
+        
+        menu[keys[newIndex]] = true;
+        
+        return menu;
+    }
+
+
+
+    private void UpdateCombatMenu(Dictionary<string, bool> menu, int v)
+    {
+        if (v < 0)
+        {
+            
         }
     }
 

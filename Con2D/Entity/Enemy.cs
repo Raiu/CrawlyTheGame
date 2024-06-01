@@ -1,6 +1,7 @@
-﻿namespace Con2D;
+﻿
+namespace Con2D;
 
-public class Enemy : Entity
+public class Enemy : Entity, IHealth, IDamageAble, ICombat
 {
     public Enemy(int posX, int posY)
     {
@@ -12,13 +13,33 @@ public class Enemy : Entity
         _body = '@';
     }
 
-    public override void Move(int x, int y)
+    public void Attack()
     {
-        _oldPosX = _posX;
-        _oldPosY = _posY;
-        _posX = x;
-        _posY = y;
+        throw new NotImplementedException();
     }
 
-    public override void UpdateActive(bool status) => _isActive = status;
+    public void Defend()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Escape()
+    {
+        throw new NotImplementedException();
+    }
+
+    public List<CombatAction> GetActions()
+    {
+        throw new NotImplementedException();
+    }
+
+    public int HealthStatus()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void TakeDamage(int damage)
+    {
+        throw new NotImplementedException();
+    }
 }

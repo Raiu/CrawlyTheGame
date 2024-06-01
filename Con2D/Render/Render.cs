@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace Con2D;
 
-public class Render
+public class Render : IRender
 {
     private Map _map;
     private List<Entity> _entities;
@@ -28,10 +28,10 @@ public class Render
                 throw new Exception("Player not found");
         _player = player;
 
-        SetViewStartEnd();
+        SetWorldView();
     }
 
-    private void SetViewStartEnd()
+    private void SetWorldView()
     {
         _viewStartX = _player.PosX - _viewSizeHalf;
         _viewStartY = _player.PosY - _viewSizeHalf;
@@ -221,5 +221,10 @@ public class Render
                 break;
         }
         Console.BackgroundColor = ConsoleColor.White;
+    }
+
+    public void Draw()
+    {
+        throw new NotImplementedException();
     }
 }

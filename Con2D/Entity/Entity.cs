@@ -75,7 +75,15 @@ public abstract class Entity
 
     //
 
-    public abstract void Move(int x, int y);
+    public virtual void Move(int x, int y)
+    {
+        _oldPosX = _posX;
+        _oldPosY = _posY;
+        _posX = x;
+        _posY = y;
+    }
 
-    public abstract void UpdateActive(bool status);
+    public virtual void SetPosition(int x, int y) => Move(x, y);
+
+    public virtual void UpdateActive(bool status) => _isActive = status;
 }
