@@ -2,11 +2,28 @@
 using Spectre.Console;
 
 namespace Con2D;
+
+public enum GameState
+{ 
+    Running,
+    Won,
+    Lost,
+}
+
+public enum ViewState
+{
+    MainMenu,
+    World,
+    Combat
+}
+
 public class GameManager
 {
-    private JsonMapSerializer Serializer = new JsonMapSerializer();
+    private JsonMapSerializer MapSerializer = new JsonMapSerializer();
     private Map _map;
-    private string _serializedMap;
+    private string _serializedMap; 
+
+    private EntityManager EM;
 
     private List<Entity> _entities;
     private Player _player;
@@ -14,8 +31,9 @@ public class GameManager
 
     public GameManager()
     {
-        _map = new StaticMapGenerator().GenerateMap(15, 15);
-        _serializedMap = Serializer.Serialize(_map);
+        EM = new EntityManager();
+        _map = new StaticMapGenerator().GenerateMap(30, 30);
+        _serializedMap = MapSerializer.Serialize(_map);
         
         _entities = new();
 
@@ -23,45 +41,34 @@ public class GameManager
         _entities.Add(_player); 
 
         _entities.Add(CreateEnemey(_map, _entities, 'E'));
-        _entities.Add(CreateEnemey(_map, _entities, 'E'));
+        _entities.Add(CreateEnemey(_map, _entities, 'E'));   
     }
 
+    public (EntityManager, Map) NewGame()
+    {
+        var entityManager = new EntityManager();
+        var map = new StaticMapGenerator().GenerateMap(30, 30);
+
+        EM.Add(EntityType.Enemy);
+
+        return (entityManager, map);
+    }
 
     public void Run()
     {
-        var iter = 0;
         while (true)
         {    
-            //if (iter > 20) break;
+            CombatCheck(_player, _entities);
 
-            Map map = Serializer.Deserialize(_serializedMap);
+            Map map = MapSerializer.Deserialize(_serializedMap);
 
             map.Tiles[_player.PosX, _player.PosY].UpdateEnity(_player.Body);
-
             map = UpdateEntities(_entities, map);
 
-            AnsiConsole.Clear();
-
-            var renderedMap = RenderMapSpectre(map);
-
-            var layout = new Layout("Root")
-                .SplitColumns(
-                    new Layout("Left").MinimumSize(100),
-                    new Layout("Right").MinimumSize(30));
-
-            layout["Left"].Update(
-                new Panel(
-                    Align.Center(
-                        new Markup(renderedMap), VerticalAlignment.Middle))
-                    .Expand());
-            layout["Right"].Update( new Panel( Align.Center( new Markup($"Player: X{_player.PosX}, Y{_player.PosY}") ) ) );
-
-            AnsiConsole.Write(layout);
-
-            //Console.WriteLine($"Player: X{_player.PosX}, Y{_player.PosY}");
+            var render = new Render(map, _entities, 20);
+            render.DrawWorld();
 
             MovePlayer(map);
-            iter++;
         }
     }
 
@@ -96,7 +103,7 @@ public class GameManager
                         break;
                     _player.Move(_player.PosX + 1, _player.PosY);
                     return;
-                case InputKey.Space:
+                case InputKey.Esc:
                     Environment.Exit(1);
                     break;
                 default:
@@ -106,10 +113,34 @@ public class GameManager
         }
     }
 
-    public void CombatCheck()
+    public void CombatCheck(Player player , List<Entity> entities)
     {
+        foreach (var entity in entities)
+        {
+            if (entity is Enemy)
+            {
+                if (!IsAdjacentTiles(player.PosX, player.PosY, entity.PosX, entity.PosY))
+                    continue;
 
+                entity.UpdateActive(false);
+            }
+
+        }
     }
+
+    public bool IsAdjacentTiles(int firstX, int firstY, int secondX, int secondY)
+    {
+        return Math.Abs(firstX - secondX) <= 1 && Math.Abs(firstY - secondY) <= 1;
+    }
+
+    public bool IsAdjecent(int x1, int y1, int x2, int y2)
+    {
+        int dx = Math.Abs(x1 - x2);
+        int dy = Math.Abs(y1 - y2);
+
+        return (dx <= 1) && (dy <= 1) && (dx + dy > 0);
+    }
+    
 
     public bool ValidMove(int x, int y, Map map, List<Entity> entities)
     {
@@ -119,7 +150,7 @@ public class GameManager
         if (map.Tiles[x, y].Type == TileType.Wall)
             return false;
 
-        if (entities.Any(e => e.PosX == x && e.PosY == y))
+        if (entities.Any(e => e.PosX == x && e.PosY == y && e.IsActive))
             return false;
 
         return true;                
@@ -183,166 +214,5 @@ public class GameManager
         if (entities.Any(e => e.PosX == x && e.PosY == y))
             return false;
         return true;
-    }
-
-    public string RenderMapSpectre(Map map)
-    { 
-        var sb = new StringBuilder();
-        
-        for (int y = 0; y < map.Height; y++)
-        {
-            for (int x = 0; x < map.Width; x++)
-            {
-                sb.Append(PrintTileSpectre(map.Tiles[x, y], x, y));
-            }
-            sb.Append("\n");
-        }
-
-        return sb.ToString();
-    }
-
-    private string PrintTileSpectre(Tile tile, int x, int y)
-    {
-        switch (tile.Type)
-        {
-            case TileType.Floor:
-                return $"[lime on lime]▒▒[/]";
-            case TileType.Wall:
-                return $"[grey on grey]██[/]";
-            case TileType.EntityFloor:
-                return $"[red on green] {tile.Body}[/]";
-            case TileType.EntityNone:
-                return $"[red on green] {tile.Body}[/]";
-            default:
-                return $"[lime on lime]▒[/]";
-        }
-    }
-
-
-    private string PrintTileSpectreDebug(Tile tile, int x, int y)
-    {
-        var xString = x.ToString("00");
-        var yString = y.ToString("00");
-
-        switch (tile.Type)
-        {
-            case TileType.Floor:
-                return $" [default on lime]{xString},{yString}[/]";
-            case TileType.Wall:
-                return $" [default on grey]{xString},{yString}[/]";
-            case TileType.EntityFloor:
-                return $" [red on green]{xString}*{yString}[/]";
-            case TileType.EntityNone:
-                return $" [red on green]{xString}*{yString}[/]";
-            default:
-                return $" [default on lime]{xString},{yString}[/]";
-        }
-    }
-
-
-    public void Render(Map map)
-    { 
-        Console.BackgroundColor = ConsoleColor.White;
-        
-        for (int y = 0; y < map.Height; y++)
-        {
-            for (int x = 0; x < map.Width; x++)
-            {
-                PrintTile(map.Tiles[x, y]);
-            }
-            Console.WriteLine();
-        }
-
-        Console.ResetColor();
-    }
-
-
-    private void PrintTile(Tile tile)
-    {
-        switch (tile.Type)
-        {
-            case TileType.Floor:
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Write("▒");
-                break;
-            case TileType.Wall:
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write("█");
-                break;
-            case TileType.EntityFloor:
-                Console.BackgroundColor = ConsoleColor.Yellow;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write(tile.Body);
-                break;
-            case TileType.EntityNone:
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write(" ");
-                break;
-            default:
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write(" ");
-                break;
-        }
-        Console.BackgroundColor = ConsoleColor.White;
-    }
-
-    public void RenderDebug(Map map)
-    { 
-        Console.BackgroundColor = ConsoleColor.White;
-        
-        for (int y = 0; y < map.Height; y++)
-        {
-            for (int x = 0; x < map.Width; x++)
-            {
-                PrintTileDebug(map.Tiles[x, y], x, y);
-            }
-            Console.ResetColor();
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.BackgroundColor = ConsoleColor.White;
-        }
-
-        Console.ResetColor();
-    }
-
-
-    private void PrintTileDebug(Tile tile, int x, int y)
-    {
-        switch (tile.Type)
-        {
-            case TileType.Floor:
-                Console.BackgroundColor = ConsoleColor.Yellow;
-                Console.ForegroundColor = ConsoleColor.Black;
-                Console.Write($" {x},{y} ");
-                Console.ResetColor();
-                Console.Write("  ");
-                break;
-            case TileType.Wall:
-                Console.BackgroundColor = ConsoleColor.DarkGray;
-                Console.Write($" {x},{y} ");
-                Console.ResetColor();
-                Console.Write("  ");
-                break;
-            case TileType.EntityFloor:
-                Console.BackgroundColor = ConsoleColor.DarkYellow;
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write($" {x}*{y} ");
-                Console.ResetColor();
-                Console.Write("  ");
-                break;
-            case TileType.EntityNone:
-                Console.BackgroundColor = ConsoleColor.White;
-                Console.Write($" {x}*{y} ");
-                Console.ResetColor();
-                Console.Write("  ");
-                break;
-            default:
-                Console.BackgroundColor = ConsoleColor.White;
-                Console.Write($" {x},{y} ");
-                Console.ResetColor();
-                Console.Write("  ");
-                break;
-        }
-        Console.BackgroundColor = ConsoleColor.White;
     }
 }

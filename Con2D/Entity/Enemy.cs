@@ -2,26 +2,23 @@
 
 public class Enemy : Entity
 {
-
     public Enemy(int posX, int posY)
     {
-        PosX = posX;
-        PosY = posY;
-        OldPosX = posX;
-        OldPosY = posY;
-        IsActive = true;
-        Body = 'E';
+        _posX = posX;
+        _posY = posY;
+        _oldPosX = posX;
+        _oldPosY = posY;
+        _isActive = true;
+        _body = '@';
     }
-
 
     public override void Move(int x, int y)
     {
-        OldPosX = PosX;
-        OldPosY = PosY;
-        PosX = x;
-        PosY = y;
+        _oldPosX = _posX;
+        _oldPosY = _posY;
+        _posX = x;
+        _posY = y;
     }
 
-
-    public override void UpdateActive(bool status) => IsActive = status;
+    public override void UpdateActive(bool status) => _isActive = status;
 }

@@ -8,7 +8,8 @@ public enum InputKey
     Left,
     Right,
     Enter,
-    Space
+    Space,
+    Esc,
 }
 
 public interface IInputHandler

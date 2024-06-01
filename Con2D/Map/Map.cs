@@ -8,6 +8,11 @@ public class Map
     public int Width { get; set; }
     public int Height { get; set; }
 
+    public int StartX = 0;
+    public int StartY = 0;
+    public int EndX;
+    public int EndY;
+
     public Map() : this(10, 10)
     {
     }
@@ -16,6 +21,9 @@ public class Map
     {
         Width = width;
         Height = height;
+
+        EndX = Width - 1;
+        EndY = Height - 1;
 
         Tiles = new Tile[Width, Height];
         InitializeMap();

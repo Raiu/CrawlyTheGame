@@ -22,6 +22,8 @@ public class Input : IInputHandler
                     return InputKey.Enter;
                 case ConsoleKey.Spacebar:
                     return InputKey.Space;
+                case ConsoleKey.Escape:
+                    return InputKey.Esc;
                 default:
                     return InputKey.None;
             }

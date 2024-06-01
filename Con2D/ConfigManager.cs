@@ -1,6 +1,4 @@
-﻿using Tomlyn;
-
-namespace Con2D;
+﻿namespace Con2D;
 
 public class ConfigManager
 {
