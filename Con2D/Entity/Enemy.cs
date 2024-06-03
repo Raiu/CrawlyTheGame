@@ -10,7 +10,7 @@ public class Enemy : Entity, IHealth, IDamageAble, ICombat
         _oldPosX = posX;
         _oldPosY = posY;
         _isActive = true;
-        _body = '@';
+        _body = 'E';
     }
 
     public void Attack()

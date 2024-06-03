@@ -35,6 +35,8 @@ public class CombatManager
             {CombatAction.Escape, false},
             };
         
+        var won = false;
+
         var running = true;
         while (running)
         {
@@ -45,20 +47,22 @@ public class CombatManager
                     case CombatAction.Attack:
                         //_hero.Attack();
                         _enemy.UpdateActive(false);
-                        running = false;
+                        won = true;
                         break;
                     case CombatAction.Defend:
                         //_hero.Defend();
                         _enemy.UpdateActive(false);
-                        running = false;
+                        won = true;
                         break;
                     case CombatAction.Escape:
                         //_hero.Escape();
                         _enemy.UpdateActive(false);
-                        running = false;
+                        won = true;
                         break;
                 }
             }
+
+            if (won) break;
 
             _actionTaken = CombatAction.None;
 
@@ -120,5 +124,4 @@ public class CombatManager
         
         return menu;
     }
-
 }

@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace Con2D;
 
-public class Render : IRender
+public class RenderWorld : IRender
 {
     private Map _map;
     private List<Entity> _entities;
@@ -14,7 +14,7 @@ public class Render : IRender
     private int _viewStartX, _viewEndX;
     private int _viewStartY, _viewEndY;
 
-    public Render(Map map, List<Entity> entities, int viewSize)
+    public RenderWorld(Map map, List<Entity> entities, int viewSize)
     {
         _map = map;
         _entities = entities;

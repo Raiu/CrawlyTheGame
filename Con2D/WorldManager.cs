@@ -1,24 +1,6 @@
-﻿using System.Text;
-using Spectre.Console;
+﻿namespace Con2D;
 
-namespace Con2D;
-
-public enum GameCondition
-{ 
-    Running,
-    Won,
-    Lost,
-}
-
-public enum GameState
-{
-    MainMenu,
-    InGameMenu,
-    World,
-    Combat
-}
-
-public class GameManager
+public class WorldManager
 {
     private JsonMapSerializer MapSerializer = new JsonMapSerializer();
     private Map _map;
@@ -33,133 +15,9 @@ public class GameManager
     private GameCondition _gameCondition;
     private GameState _gameState;
 
-
-    public GameManager()
-    {
-        (EM, _map) = NewGame();
-
-        _mapRenderBase = MapSerializer.Serialize(_map);
-
-        Hero = EM.Hero;
-
-        _gameState = GameState.World;
-        _gameCondition = GameCondition.Running;
-
-        Run();
-    }
-
-    public (EntityManager, Map) NewGame()
-    {
-        var map = new StaticMapGenerator().GenerateMap(30, 30);
-
-        var em = new EntityManager(map);
-        em.Add(EntityType.Enemy);
-
-        return (em, map);
-    }
-
-    public void Run()
+    public WorldManager()
     {
 
-        while (_gameCondition == GameCondition.Running)
-        {
-            switch (_gameState)
-            {
-                case GameState.MainMenu:
-                    break;
-                case GameState.InGameMenu:
-                    break;
-                case GameState.World:
-                    RunWorld(); 
-                    break;
-                case GameState.Combat:
-                    RunCombat();
-                    break;
-                default:
-                    break;
-            }            
-        }
-
-        if (_gameCondition == GameCondition.Won)
-            WinScreen();
-    }
-
-    private void RunMainMenu()
-    {
-        // Finish this last
-        // New Game
-        // Load Game
-        // Map Editor
-        // Quit
-
-        throw new NotImplementedException();
-
-        /*
-        while (true)
-        {
-            var menu = new Dictionary<string, bool>
-            {
-                {"Play", false},
-                {"Quit", false}
-            };
-        }
-        */
-    }
-
-    private void RunInGameMenu()
-    {
-        // Inventory
-        // Status
-        throw new NotImplementedException();
-    }
-
-    private void RunWorld()
-    {
-        while (true)
-        {
-            if (HasWon())
-            {
-                _gameCondition = GameCondition.Won;
-                break;
-            }
-            
-            var IsCombat = CombatCheck(Hero, EM.Active);
-            if (IsCombat) break;
-
-            var map = MapSerializer.Deserialize(_mapRenderBase);
-            map = UpdateTilesWithEntities(EM.Active, map);
-
-            var render = new RenderWorld(map, EM.Active, 20);
-            render.DrawWorld();
-
-            MovePlayer(map);
-        }
-    }
-
-    private void RunCombat()
-    {
-        var CombatManager = new CombatManager(EM.Active, _combatPlayer, _combatEnemy);
-        CombatManager.Run();
-
-        _gameState = GameState.World;
-    }
-
-    private Dictionary<T, bool> CycleMenu<T>(Dictionary<T, bool> menu, int steps) where T : notnull
-    {
-        var index = menu.Values.ToList().IndexOf(true);
-
-        if (index == -1)
-            throw new InvalidOperationException("No item with value 'true' found in the menu.");
-
-        var keys = menu.Keys.ToList();
-        menu[keys[index]] = false;
-        
-        var newIndex = (index + steps) % keys.Count;
-        newIndex = (newIndex < 0) ? newIndex + keys.Count : newIndex;
-        
-        menu[keys[newIndex]] = true;
-
-        return menu;
     }
 
 
@@ -223,7 +81,23 @@ public class GameManager
         return false;
     }
 
-    public bool HasWon() => !EM.Enemy.Any(e => e.IsActive);
+    private Dictionary<T, bool> CycleMenu<T>(Dictionary<T, bool> menu, int steps) where T : notnull
+    {
+        var index = menu.Values.ToList().IndexOf(true);
+
+        if (index == -1)
+            throw new InvalidOperationException("No item with value 'true' found in the menu.");
+
+        var keys = menu.Keys.ToList();
+        menu[keys[index]] = false;
+        
+        var newIndex = (index + steps) % keys.Count;
+        newIndex = (newIndex < 0) ? newIndex + keys.Count : newIndex;
+        
+        menu[keys[newIndex]] = true;
+
+        return menu;
+    }
 
     public bool IsAdjacentTiles(int firstX, int firstY, int secondX, int secondY)
     {
@@ -266,13 +140,4 @@ public class GameManager
     private bool ValidEntityPosition(List<Entity> entities, int posX, int posY) =>
             !entities.Any(e => e.PosX == posX && e.PosY == posY);
 
-    private void WinScreen()
-    {
-        Console.Clear();
-        Console.WriteLine("YOU WON");
-
-        Console.ReadKey(true);
-
-        Environment.Exit(1);
-    }
 }
