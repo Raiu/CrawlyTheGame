@@ -3,16 +3,17 @@ using Spectre.Console;
 
 namespace Con2D;
 
-public enum GameState
+public enum GameCondition
 { 
     Running,
     Won,
     Lost,
 }
 
-public enum ViewState
+public enum GameState
 {
     MainMenu,
+    InGameMenu,
     World,
     Combat
 }
@@ -21,32 +22,40 @@ public class GameManager
 {
     private JsonMapSerializer MapSerializer = new JsonMapSerializer();
     private Map _map;
-    private string _serializedMap; 
+    private string _mapRenderBase; 
 
     private EntityManager EM;
+    private Player Hero;
 
-    private List<Entity> _entities;
-    private Player _player;
+    private Player _combatPlayer;
+    private Enemy _combatEnemy;
+
+    private GameCondition _gameCondition;
+    private GameState _gameState;
 
 
     public GameManager()
     {
-        EM = new EntityManager();
-        var enemy = (Enemy)EM.Add(EntityType.Enemy);
-        var hero = EM.Hero;
+        (EM, _map) = NewGame();
 
+        _mapRenderBase = MapSerializer.Serialize(_map);
 
-        RunCombat(hero, enemy);
+        Hero = EM.Hero;
+
+        _gameState = GameState.World;
+        _gameCondition = GameCondition.Running;
+
+        Run();
 
         /*
         EM = new EntityManager();
         _map = new StaticMapGenerator().GenerateMap(30, 30);
-        _serializedMap = MapSerializer.Serialize(_map);
+        _mapRenderBase = MapSerializer.Serialize(_map);
         
         _entities = new();
 
-        _player = CreatePlayer(_map, _entities, '@');
-        _entities.Add(_player); 
+        Hero = CreatePlayer(_map, _entities, '@');
+        _entities.Add(Hero); 
 
         _entities.Add(CreateEnemey(_map, _entities, 'E'));
         _entities.Add(CreateEnemey(_map, _entities, 'E'));   
@@ -55,78 +64,92 @@ public class GameManager
 
     public (EntityManager, Map) NewGame()
     {
-        var entityManager = new EntityManager();
         var map = new StaticMapGenerator().GenerateMap(30, 30);
 
-        EM.Add(EntityType.Enemy);
+        var entityManager = new EntityManager();
+        entityManager.Add(EntityType.Enemy);
+        entityManager.Add(EntityType.Enemy);
+        entityManager.Add(EntityType.Enemy);
+        entityManager.Add(EntityType.Enemy);
 
         return (entityManager, map);
     }
 
     public void Run()
     {
+
+        while (_gameCondition == GameCondition.Running)
+        {
+            switch (_gameState)
+            {
+                case GameState.MainMenu:
+                    break;
+                case GameState.InGameMenu:
+                    break;
+                case GameState.World:
+                    RunWorld();
+                    break;
+                case GameState.Combat:
+                    RunCombat();
+                    break;
+                default:
+                    break;
+            }            
+        }
+    }
+
+    private void RunMainMenu()
+    {
+        // Finish this last
+        // New Game
+        // Load Game
+        // Map Editor
+        // Quit
+
+        throw new NotImplementedException();
+
+        /*
+        while (true)
+        {
+            var menu = new Dictionary<string, bool>
+            {
+                {"Play", false},
+                {"Quit", false}
+            };
+        }
+        */
+    }
+
+    private void RunInGameMenu()
+    {
+        // Inventory
+        // Status
+        throw new NotImplementedException();
+    }
+
+    private void RunWorld()
+    {
         while (true)
         {    
-            CombatCheck(_player, _entities);
+            var IsCombat = CombatCheck(Hero, EM.Active);
+            if (IsCombat) break;
 
-            Map map = MapSerializer.Deserialize(_serializedMap);
+            var map = MapSerializer.Deserialize(_mapRenderBase);
+            map = UpdateTilesWithEntities(EM.Active, map);
 
-            map.Tiles[_player.PosX, _player.PosY].UpdateEnity(_player.Body);
-            map = UpdateEntities(_entities, map);
-
-            var render = new Render(map, _entities, 20);
+            var render = new Render(map, EM.Active, 20);
             render.DrawWorld();
 
             MovePlayer(map);
         }
     }
 
-    public void RunCombat(Player hero, Enemy enemy)
+    private void RunCombat()
     {
-        var menu = new Dictionary<string, bool>(){
-            {"Attack", true},
-            {"Defend", false},
-            {"Heal", false},
-            {"Escape", false}};
+        var CombatManager = new CombatManager(EM.Active, _combatPlayer, _combatEnemy);
+        CombatManager.Run();
 
-        bool action = false;
-        
-
-        while (true)
-        {
-            if (action)
-            {
-
-            }
-
-            var render = new RenderCombat(hero, enemy, menu);
-            render.Draw();
-            
-            
-            NavigateCombatMenu(menu);
-        }
-    }
-
-    private void NavigateCombatMenu(Dictionary<string, bool> menu)
-    {
-        Input input = new Input();
-
-        while (true)
-        {
-            var inputKey = input.ReadGameInput();
-
-            if (inputKey == InputKey.Up)
-            {
-                CycleMenu(menu, -1);
-                break;
-            }
-            else if (inputKey == InputKey.Down)
-            {
-                CycleMenu(menu, 1);
-                break;
-            }
-        }
-
+        _gameState = GameState.World;
     }
 
     private Dictionary<T, bool> CycleMenu<T>(Dictionary<T, bool> menu, int steps) where T : notnull
@@ -143,19 +166,10 @@ public class GameManager
         newIndex = (newIndex < 0) ? newIndex + keys.Count : newIndex;
         
         menu[keys[newIndex]] = true;
-        
+
         return menu;
     }
 
-
-
-    private void UpdateCombatMenu(Dictionary<string, bool> menu, int v)
-    {
-        if (v < 0)
-        {
-            
-        }
-    }
 
     private void MovePlayer(Map map)
     {
@@ -169,24 +183,24 @@ public class GameManager
             switch (inputKey)
             {
                 case InputKey.Up:
-                    if (!ValidMove(_player.PosX, _player.PosY - 1, map, _entities))
+                    if (!ValidMove(Hero.PosX, Hero.PosY - 1, map, EM.Active))
                         break;
-                    _player.Move(_player.PosX, _player.PosY - 1);
+                    Hero.Move(Hero.PosX, Hero.PosY - 1);
                     return;
                 case InputKey.Down:
-                    if (!ValidMove(_player.PosX, _player.PosY + 1, map, _entities))
+                    if (!ValidMove(Hero.PosX, Hero.PosY + 1, map, EM.Active))
                         break; 
-                    _player.Move(_player.PosX, _player.PosY + 1);
+                    Hero.Move(Hero.PosX, Hero.PosY + 1);
                     return;
                 case InputKey.Left:
-                    if (!ValidMove(_player.PosX - 1, _player.PosY, map, _entities))
+                    if (!ValidMove(Hero.PosX - 1, Hero.PosY, map, EM.Active))
                         break;
-                    _player.Move(_player.PosX - 1, _player.PosY);
+                    Hero.Move(Hero.PosX - 1, Hero.PosY);
                     return;
                 case InputKey.Right:
-                    if (!ValidMove(_player.PosX + 1, _player.PosY, map, _entities))
+                    if (!ValidMove(Hero.PosX + 1, Hero.PosY, map, EM.Active))
                         break;
-                    _player.Move(_player.PosX + 1, _player.PosY);
+                    Hero.Move(Hero.PosX + 1, Hero.PosY);
                     return;
                 case InputKey.Esc:
                     Environment.Exit(1);
@@ -198,7 +212,7 @@ public class GameManager
         }
     }
 
-    public void CombatCheck(Player player , List<Entity> entities)
+    public bool CombatCheck(Player player , List<Entity> entities)
     {
         foreach (var entity in entities)
         {
@@ -207,10 +221,14 @@ public class GameManager
                 if (!IsAdjacentTiles(player.PosX, player.PosY, entity.PosX, entity.PosY))
                     continue;
 
-                entity.UpdateActive(false);
+                _combatPlayer = player;
+                _combatEnemy = (Enemy) entity;
+                _gameState = GameState.Combat;
+                return true;
             }
 
         }
+        return false;
     }
 
     public bool IsAdjacentTiles(int firstX, int firstY, int secondX, int secondY)
@@ -246,7 +264,7 @@ public class GameManager
         return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight;
     }
 
-    private Map UpdateEntities(List<Entity> entities, Map map)
+    private Map UpdateTilesWithEntities(List<Entity> entities, Map map)
     {
         entities.Where(e => e.IsActive).ToList().ForEach(e => 
                 map.Tiles[e.PosX, e.PosY].UpdateEnity(e.Body));
@@ -285,7 +303,7 @@ public class GameManager
             if (map.Tiles[posX, posY].Type == TileType.Wall)
                 continue;
 
-            if (!ValidEntityPosition(_entities, 2, 2))
+            if (!ValidEntityPosition(EM.Active, 2, 2))
                 continue;
 
             break;

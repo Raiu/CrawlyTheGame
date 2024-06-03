@@ -8,9 +8,9 @@ public class RenderCombat : IRender
     private Player _player;
     private Enemy _enemy;
     private CombatLog _log = new();
-    private Dictionary<string, bool> _ActionMenu;
+    private Dictionary<CombatAction, bool> _ActionMenu;
 
-    public RenderCombat(Player player, Enemy enemy, Dictionary<string, bool> menu)
+    public RenderCombat(Player player, Enemy enemy, Dictionary<CombatAction, bool> menu)
     {
         _player = player;
         _enemy = enemy;
@@ -26,8 +26,19 @@ public class RenderCombat : IRender
         var actionMenu = new Markup(GenActionMenu());
         var actionMenuPanel = new Panel(actionMenu) { Width = 16 };
 
-        layout["Left"].Update(Align.Right(new Panel("test left")));
-        layout["right"].Update(new Panel("test right"));
+        layout["Left"].Update(
+            new Panel(
+                Align.Center(
+                    new Panel(new Text($"{EntityModels.hero}")).NoBorder()))
+                .Expand()
+            );
+
+        layout["right"].Update(
+            new Panel(
+                Align.Center(
+                    new Panel(new Text($"{EntityModels.skeleton}")).NoBorder()))
+                .Expand()
+            );
 
         layout["ActionMenu"].Update(Align.Center(actionMenuPanel));
         layout["CombatLog"].Update(new Panel("Combat Log").Expand());
@@ -51,18 +62,6 @@ public class RenderCombat : IRender
 
     private Layout GenMain()
     {
-        // var layout = new Layout("Root")
-        //     .SplitColumns(
-        //         new Layout("Left"),
-        //         new Layout("Right"));
-
-        /*
-        layout["Left"].Update(
-            new Panel(Align.Center(
-                    new Markup("Test left"))));
-        layout["Right"].Update( new Panel( Align.Center( new Markup("test right") ) ) );
-        */
-
         return new Layout("Root")
             .SplitRows(
                 new Layout("Top").SplitColumns(

@@ -1,11 +1,13 @@
 ﻿namespace Con2D;
 
+/*
 public enum CombatAction
 {
     Attack,
     Defend,
     Escape
 }
+*/
 
 public interface ICombat
 {
