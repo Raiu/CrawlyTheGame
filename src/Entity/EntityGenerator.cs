@@ -2,35 +2,44 @@
 
 public class EntityGenerator
 {
-    public Player CreatePlayer()
+    private Map _map;
+
+    public EntityGenerator(Map map)
     {
-        var player = new Player(0, 0);
-        player.Body = '@';
-        return player;
+        _map = map;
     }
 
-    public Enemy CreateEnemy()
+    public Player Createplayer() => 
+        CreatePlayer(new Coordinate(-1, -1));
+
+    public Player CreatePlayer(Coordinate position, char? body = null)
     {
-        var enemy = new Enemy(0, 0);
-        enemy.Body = 'E';
-        return enemy;
+        if (position.X == -1 && position.Y == -1)
+            position = GenerateRandomPosition(_map);
+
+        char b = body ?? 'E';
+        return new Player(position, b);
     }
 
+    public Enemy CreateEnemy() => 
+        CreateEnemy(new Coordinate(-1, -1));
 
-    /* private Player CreatePlayer(Map map, List<Entity> entities, char body)
+    public Enemy CreateEnemy(Coordinate position, char? body = null)
     {
-        var (posX, posY) = GenerateRandomPosition(map);
-        var player = new Player(posX, posY);
-        player.Body = body;
-        return player;
+        if (position.X == -1 && position.Y == -1)
+            position = GenerateRandomPosition(_map);
+        
+        char b = body ?? 'E';
+
+        return new Enemy(position, b);
     }
 
-    private Enemy CreateEnemey(Map map, List<Entity> entities, char body)
+    private Coordinate GenerateRandomPosition(Map map)
     {
-        var (posX, posY) = GenerateRandomPosition(map);
-        var enemy = new Enemy(posX, posY);
-        enemy.Body = body;
-        return enemy;
-    } 
-    */
+        var random = new Random();
+        var posX = random.Next(0, map.EndX);
+        var posY = random.Next(0, map.EndY);
+
+        return new Coordinate(posX, posY);
+    }
 }

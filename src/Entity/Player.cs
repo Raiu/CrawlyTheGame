@@ -1,31 +1,39 @@
 ﻿namespace Crawly;
 
-public class Player : Entity, IHealth, IDamageAble, ICombat
+public class Player : IEntity, IDrawable, IMoveable, IHealth, IDamageAble, ICombat
 {
     private int _health;
     private int _attackDamage;
     private int _defence;
 
-    public Player(int posX, int posY)
+    public Guid Id { get; private set; }
+    public EntityType Type { get; private set; }
+    public bool IsActive { get; private set; }
+    public Coordinate Position { get; set; }
+    public Coordinate OldPosition { get; private set; }
+
+    public char Body { get; private set; }
+    public bool IsVisible { get; private set; }
+
+    public Player (Coordinate position, char body = '@')
     {
-        _posX = posX;
-        _posY = posY;
-        _oldPosX = posX;
-        _oldPosY = posY;
-        _isActive = true;
-        _body = '@';
+        Type = EntityType.Player;
+        IsActive = true;
+        Position = position;
+        OldPosition = Position;
+        
+        Body = '@';
+        IsVisible = true;
 
         _health = 100;
         _attackDamage = 10;
         _defence = 5;
     }
 
-    public override void Move(int x, int y)
+    public void Move(Coordinate newPosition)
     {
-        _oldPosX = _posX;
-        _oldPosY = _posY;
-        _posX = x;
-        _posY = y;
+        OldPosition = Position;
+        Position = newPosition;
     }
 
     public int HealthStatus() => _health;
@@ -33,7 +41,7 @@ public class Player : Entity, IHealth, IDamageAble, ICombat
     public void TakeDamage(int damage) =>
             _health -= damage - _defence > 0 ? damage - _defence : damage;
 
-    public override void UpdateActive(bool status) => _isActive = status;
+    public void SetIsActive(bool status) => IsActive = status;
 
     public void Attack()
     {
@@ -51,6 +59,21 @@ public class Player : Entity, IHealth, IDamageAble, ICombat
     }
 
     public List<CombatAction> GetActions()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void SetPosition()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Draw()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Move()
     {
         throw new NotImplementedException();
     }

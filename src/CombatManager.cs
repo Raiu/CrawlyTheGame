@@ -9,21 +9,37 @@ public enum CombatAction
     Escape
 }
 
-public class CombatManager
+public class CombatManager : IGameStateManager
 {
 
+    private GameManager _gameManager;
+    private CombatInstanceData? _data;
 
-    private List<Entity> _entities;
     private Player _hero;
     private Enemy _enemy;
 
     private CombatAction _actionTaken = CombatAction.None;
+    private bool _isRunning;
 
-    public CombatManager(List<Entity> entities, Player hero, Enemy enemy)
+    public CombatManager(GameManager gameManager)
     {
-        _entities = entities;
-        _hero = hero;
-        _enemy = enemy;
+        _gameManager = gameManager;
+        _gameManager.OnGameStateChange += CheckGameState;
+        _gameManager.OnGameConditionChange += CheckGameCondition;
+
+        _data = _gameManager.CombatInstanceData;
+
+        if (_data != null)
+        {
+            _hero = _data.Player;
+            _enemy = _data.Enemy;
+        }
+        else
+        {
+            _gameManager.ChangeToPreviousGameState();
+            throw new Exception("no combat data");
+        }
+        
     }
 
     public void Run()
@@ -37,8 +53,8 @@ public class CombatManager
 
         var won = false;
 
-        var running = true;
-        while (running)
+        _isRunning = true;
+        while (_isRunning)
         {
             if (_actionTaken != CombatAction.None)
             {
@@ -46,17 +62,17 @@ public class CombatManager
                 {
                     case CombatAction.Attack:
                         //_hero.Attack();
-                        _enemy.UpdateActive(false);
+                        _enemy.SetIsActive(false);
                         won = true;
                         break;
                     case CombatAction.Defend:
                         //_hero.Defend();
-                        _enemy.UpdateActive(false);
+                        _enemy.SetIsActive(false);
                         won = true;
                         break;
                     case CombatAction.Escape:
                         //_hero.Escape();
-                        _enemy.UpdateActive(false);
+                        _enemy.SetIsActive(false);
                         won = true;
                         break;
                 }
@@ -102,7 +118,7 @@ public class CombatManager
     }
 
 
-    private void DoAction<T>(T action, Entity actor, Entity target)
+    private void DoAction<T>(T action, IEntity actor, IEntity target)
     {
 
     }
@@ -123,5 +139,33 @@ public class CombatManager
         menu[keys[newIndex]] = true;
 
         return menu;
+    }
+
+    public void Update()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Render()
+    {
+        throw new NotImplementedException();
+    }
+
+    private void CheckGameState() {
+        if (_gameManager.CurrentGameState != GameState.Combat) _isRunning = false;
+    }
+
+    private void CheckGameCondition() {
+        if (_gameManager.CurrentGameCondition != GameCondition.None) _isRunning = false;
+    }
+
+    void IGameStateManager.CheckGameState()
+    {
+        throw new NotImplementedException();
+    }
+
+    void IGameStateManager.CheckGameCondition()
+    {
+        throw new NotImplementedException();
     }
 }

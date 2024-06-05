@@ -2,15 +2,10 @@
 
 public interface IEntity
 {
-    public int PosX { get; set; }
-    public int PosY { get; set; }
-    public int OldPosX { get; set; }
-    public int OldPosY { get; set; }
-    public bool IsActive { get; set; }
-    public char Body { get; set; }
+    Guid Id { get; }
+    EntityType Type { get; }
+    Coordinate Position { get; }
+    bool IsActive { get; }
 
-    public void Move(int x, int y);
-
-    public void UpdateActive(bool status);
-
+    void SetPosition();
 }

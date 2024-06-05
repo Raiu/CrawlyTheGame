@@ -6,14 +6,14 @@ namespace Crawly;
 public class RenderWorld : IRender
 {
     private Map _map;
-    private List<Entity> _entities;
+    private List<IEntity> _entities;
     private Player _player;
 
     private int _viewSize, _viewSizeHalf;
     private int _viewStartX, _viewEndX;
     private int _viewStartY, _viewEndY;
 
-    public RenderWorld(Map map, List<Entity> entities, int viewSize)
+    public RenderWorld(Map map, List<IEntity> entities, int viewSize)
     {
         _map = map;
         _entities = entities;
@@ -54,8 +54,8 @@ public class RenderWorld : IRender
 
     private void SetWorldView()
     {
-        _viewStartX = _player.PosX - _viewSizeHalf;
-        _viewStartY = _player.PosY - _viewSizeHalf;
+        _viewStartX = _player.Position.X - _viewSizeHalf;
+        _viewStartY = _player.Position.Y - _viewSizeHalf;
         _viewEndX = _viewStartX + _viewSize;
         _viewEndY = _viewStartY + _viewSize;
 
@@ -102,7 +102,7 @@ public class RenderWorld : IRender
         AnsiConsole.Write(layout);
     }
 
-    private string GenPlayerString() => $"Player: X{_player.PosX}, Y{_player.PosY}";
+    private string GenPlayerString() => $"Player: X{_player.Position.X}, Y{_player.Position.Y}";
 
     public string RenderMapSpectre(Map map)
     {
