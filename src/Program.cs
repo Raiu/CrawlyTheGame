@@ -4,7 +4,13 @@ class Program
 {
     static void Main(string[] args)
     {
-        var game = new GameManager();
+        IInputHandler inputHandler = new ConsoleInputHandler();
+        inputHandler.StartListening();
+        // Future implementations
+        // IRenderHandler renderHandler = new ConsoleRenderHandler();
+
+
+        var game = new GameManager(inputHandler);
         game.StartGame();
     }
 }

@@ -2,7 +2,7 @@
 
 public class GameManager
 {
-    private bool _isRunning;
+    public IInputHandler InputHandler { get; private set; }
 
     public event Action? OnGameStateChange;
     public event Action? OnGameConditionChange;
@@ -16,8 +16,12 @@ public class GameManager
 
     public CombatInstanceData? CombatInstanceData { get; set; }
 
-    public GameManager()
+    private bool _isRunning;
+
+    public GameManager(IInputHandler inputHandler)
     {
+        InputHandler = inputHandler;
+
         CurrentGameState = GameState.MainMenu;
         PreviousGameState = GameState.None;
         CurrentGameCondition = GameCondition.None;

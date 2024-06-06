@@ -4,6 +4,8 @@ public class WorldManager : IGameStateManager
 {
     private GameManager _gameManager;
 
+    private readonly WorldController _worldController;
+
     private JsonMapSerializer MapSerializer = new JsonMapSerializer();
     private Map _map;
     private string _mapRenderBase;
@@ -19,15 +21,18 @@ public class WorldManager : IGameStateManager
     public WorldManager(GameManager gameManager, Map map)
     {
         _gameManager = gameManager;
+        _worldController = new WorldController(_gameManager.InputHandler);
+
         _entityManager = _gameManager.EntityManager;
         _hero = _entityManager.Hero;
 
         _map = map;
         _mapRenderBase = MapSerializer.Serialize(_map);
 
-
         _gameManager.OnGameStateChange += CheckGameState;
         _gameManager.OnGameConditionChange += CheckGameCondition;
+
+        _gameManager.InputHandler.OnKeyPressed += HandleKeyInput;
     }
 
     public void Run()
@@ -46,7 +51,45 @@ public class WorldManager : IGameStateManager
             var render = new RenderWorld(map, _entityManager.Active, 20);
             render.Draw();
 
-            MovePlayer(map);
+            // MovePlayer(map);
+
+            Thread.Sleep(2000);
+        }
+    }
+
+    private void HandleKeyInput(InputKey key)
+    {
+        if (key == InputKey.None)
+            return;
+
+        switch (key)
+        {
+            case InputKey.Up:
+                if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y - 1), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y - 1));
+                return;
+            case InputKey.Down:
+                if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y + 1), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y + 1));
+                return;
+            case InputKey.Left:
+                if (!ValidMove(new Coordinate(_hero.Position.X - 1, _hero.Position.Y), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X - 1, _hero.Position.Y));
+                return;
+            case InputKey.Right:
+                if (!ValidMove(new Coordinate(_hero.Position.X + 1, _hero.Position.Y), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
+                return;
+            case InputKey.Esc:
+                Environment.Exit(1);
+                break;
+            default:
+                break;
+
         }
     }
 
@@ -58,46 +101,7 @@ public class WorldManager : IGameStateManager
         if (_gameManager.CurrentGameCondition != GameCondition.None) _isRunning = false;
     }
 
-    private void MovePlayer(Map map)
-    {
-        Input input = new Input();
-        while (true)
-        {
-            var inputKey = input.ReadGameInput();
-            if (inputKey == InputKey.None)
-                continue;
-
-            switch (inputKey)
-            {
-                case InputKey.Up:
-                    if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y - 1), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y - 1));
-                    return;
-                case InputKey.Down:
-                    if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y + 1), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y + 1));
-                    return;
-                case InputKey.Left:
-                    if (!ValidMove(new Coordinate(_hero.Position.X - 1, _hero.Position.Y), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X - 1, _hero.Position.Y));
-                    return;
-                case InputKey.Right:
-                    if (!ValidMove(new Coordinate(_hero.Position.X + 1, _hero.Position.Y), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
-                    return;
-                case InputKey.Esc:
-                    Environment.Exit(1);
-                    break;
-                default:
-                    break;
-
-            }
-        }
-    }
+    
 
     public bool CombatCheck(Player player, List<IEntity> entities)
     {
@@ -196,6 +200,47 @@ public class WorldManager : IGameStateManager
 
     // Graveyard
     /*
+    private void MovePlayer(Map map)
+    {
+        Input input = new Input();
+        while (true)
+        {
+            var inputKey = input.ReadGameInput();
+            if (inputKey == InputKey.None)
+                continue;
+
+            switch (inputKey)
+            {
+                case InputKey.Up:
+                    if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y - 1), map, _entityManager.Active))
+                        break;
+                    _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y - 1));
+                    return;
+                case InputKey.Down:
+                    if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y + 1), map, _entityManager.Active))
+                        break;
+                    _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y + 1));
+                    return;
+                case InputKey.Left:
+                    if (!ValidMove(new Coordinate(_hero.Position.X - 1, _hero.Position.Y), map, _entityManager.Active))
+                        break;
+                    _hero.Move(new Coordinate(_hero.Position.X - 1, _hero.Position.Y));
+                    return;
+                case InputKey.Right:
+                    if (!ValidMove(new Coordinate(_hero.Position.X + 1, _hero.Position.Y), map, _entityManager.Active))
+                        break;
+                    _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
+                    return;
+                case InputKey.Esc:
+                    Environment.Exit(1);
+                    break;
+                default:
+                    break;
+
+            }
+        }
+    }
+
     private bool ValidEntityPosition(List<IEntity> entities, int posX, int posY) =>
             !entities.Any(e => e.PosX == posX && e.PosY == posY);
 

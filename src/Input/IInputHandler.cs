@@ -1,22 +1,15 @@
-﻿namespace Crawly;
-
-public enum InputKey
-{
-    None,
-    Up,
-    Down,
-    Left,
-    Right,
-    Enter,
-    Space,
-    Esc,
-}
+﻿
+namespace Crawly;
 
 public interface IInputHandler
 {
-    public InputKey ReadGameInput();
+    event Action<InputKey> OnKeyPressed;
 
-    public string ReadKey();
+    InputKey ReadInputKey();
 
-    public string ReadLine();
+    string ReadKey();
+
+    string ReadLine();
+
+    void StartListening();
 }

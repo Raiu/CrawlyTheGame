@@ -1,4 +1,6 @@
-﻿namespace Crawly;
+﻿using System.ComponentModel.Design;
+
+namespace Crawly;
 
 public enum CombatAction
 {
@@ -24,9 +26,6 @@ public class CombatManager : IGameStateManager
     public CombatManager(GameManager gameManager)
     {
         _gameManager = gameManager;
-        _gameManager.OnGameStateChange += CheckGameState;
-        _gameManager.OnGameConditionChange += CheckGameCondition;
-
         _data = _gameManager.CombatInstanceData;
 
         if (_data != null)
@@ -39,12 +38,18 @@ public class CombatManager : IGameStateManager
             _gameManager.ChangeToPreviousGameState();
             throw new Exception("no combat data");
         }
+
+        _gameManager.OnGameStateChange += CheckGameState;
+        _gameManager.OnGameConditionChange += CheckGameCondition;
+        _gameManager.InputHandler.OnKeyPressed += HandleKeyInput;
         
     }
 
+    private Dictionary<CombatAction, bool> _menu;
+
     public void Run()
     {
-        var menu = new Dictionary<CombatAction, bool>(){
+        _menu = new Dictionary<CombatAction, bool>(){
             {CombatAction.Attack, true},
             {CombatAction.Defend, false},
             {CombatAction.Heal, false},
@@ -82,40 +87,37 @@ public class CombatManager : IGameStateManager
 
             _actionTaken = CombatAction.None;
 
-            var render = new RenderCombat(_hero, _enemy, menu);
+            var render = new RenderCombat(_hero, _enemy, _menu);
             render.Draw();
 
 
-            CombatActionMenu(menu);
+            //HandleKeyInput(menu);
+
+            Thread.Sleep(2000);
         }
     }
 
-    private void CombatActionMenu(Dictionary<CombatAction, bool> menu)
+    private void HandleKeyInput(InputKey key)
     {
-        Input input = new Input();
+        if (key == InputKey.None)
+            return;
 
-        while (true)
+        var menu = _menu;
+
+        switch (key)
         {
-            var inputKey = input.ReadGameInput();
-
-            if (inputKey == InputKey.Up)
-            {
-                CycleMenu(menu, -1);
+            case InputKey.Up:
+                menu = CycleMenu(menu, -1);
                 break;
-            }
-            else if (inputKey == InputKey.Down)
-            {
-                CycleMenu(menu, 1);
+            case InputKey.Down:
+                menu = CycleMenu(menu, 1);
                 break;
-            }
-            else if (inputKey == InputKey.Enter)
-            {
+            case InputKey.Enter:
                 _actionTaken = menu.First(x => x.Value).Key;
                 break;
-            }
         }
-
     }
+    
 
 
     private void DoAction<T>(T action, IEntity actor, IEntity target)
@@ -168,4 +170,35 @@ public class CombatManager : IGameStateManager
     {
         throw new NotImplementedException();
     }
+
+    /* Graveyard
+    
+    private void CombatActionMenu(Dictionary<CombatAction, bool> menu)
+    {
+        Input input = new Input();
+
+        while (true)
+        {
+            var inputKey = input.ReadGameInput();
+
+            if (inputKey == InputKey.Up)
+            {
+                CycleMenu(menu, -1);
+                break;
+            }
+            else if (inputKey == InputKey.Down)
+            {
+                CycleMenu(menu, 1);
+                break;
+            }
+            else if (inputKey == InputKey.Enter)
+            {
+                _actionTaken = menu.First(x => x.Value).Key;
+                break;
+            }
+        }
+
+    }
+
+    */
 }
