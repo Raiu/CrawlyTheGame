@@ -3,9 +3,14 @@ namespace Crawly;
 class WorldController : IPlayerController
 {
     private readonly IInputHandler _inputHandler;
+
+    private readonly World _world;
+
+    private Player _hero;
     
-    public WorldController(IInputHandler inputHandler)
+    public WorldController(World world, IInputHandler inputHandler)
     {
+        _world = world;
         _inputHandler = inputHandler;
     }
 

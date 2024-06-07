@@ -9,7 +9,7 @@ class Program
         // IRenderHandler renderHandler = new ConsoleRenderHandler();
 
 
-        var game = new GameManager(inputHandler);
+        var game = new Game(inputHandler);
         game.StartGame();
     }
 }

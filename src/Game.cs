@@ -1,24 +1,45 @@
 ﻿namespace Crawly;
 
-public class GameManager
+public class Game
 {
-    public IInputHandler InputHandler { get; private set; }
+    private bool _isRunning;
+    private GameCondition _currentGameCondition;
+    private GameState _currentGameState;
 
     public event Action? OnGameStateChange;
     public event Action? OnGameConditionChange;
 
-    public GameState CurrentGameState { get; private set; }
-    public GameState PreviousGameState { get; private set; }
-    public GameCondition CurrentGameCondition { get; private set; }
+    public GameState CurrentGameState
+    { 
+        get => _currentGameState;
+        private set
+        { 
+            _currentGameState = value;
+            OnGameStateChange?.Invoke();
+        }
+    }
 
-    public WorldManager WorldManager { get; private set; } = null!;
+    public GameState PreviousGameState { get; private set; }
+
+    public GameCondition CurrentGameCondition
+    { 
+        get => _currentGameCondition;
+        private set
+        { 
+            _currentGameCondition = value;
+            OnGameConditionChange?.Invoke();
+        }
+    }
+
+    public IInputHandler InputHandler { get; private set; }
+
+    public World World { get; private set; } = null!;
+
     public EntityManager EntityManager { get; private set; } = null!;
 
     public CombatInstanceData? CombatInstanceData { get; set; }
 
-    private bool _isRunning;
-
-    public GameManager(IInputHandler inputHandler)
+    public Game(IInputHandler inputHandler)
     {
         InputHandler = inputHandler;
 
@@ -43,7 +64,7 @@ public class GameManager
                 case GameState.InGameMenu:
                     break;
                 case GameState.World:
-                    if (CheckManagerInitiated()) WorldManager.Run();
+                    if (CheckManagerInitiated()) World.Run();
                     break;
                 case GameState.Combat:
                     var combatInstance = new CombatManager(this);
@@ -70,7 +91,7 @@ public class GameManager
 
         NewGame(out Map map, out EntityManager em);
         EntityManager = em;
-        WorldManager = new(this, map);
+        World = new(this, map);
         CurrentGameState = GameState.World;
     }
 
@@ -83,7 +104,7 @@ public class GameManager
     }
 
     private bool CheckManagerInitiated() =>
-        WorldManager != null && EntityManager != null;
+        World != null && EntityManager != null;
 
     private void RunMainMenu()
     {

@@ -1,8 +1,8 @@
 ﻿namespace Crawly;
 
-public class WorldManager : IGameStateManager
+public class World : IGameStateManager
 {
-    private GameManager _gameManager;
+    private Game _game;
 
     private readonly WorldController _worldController;
 
@@ -18,21 +18,21 @@ public class WorldManager : IGameStateManager
 
     private bool _isRunning;
 
-    public WorldManager(GameManager gameManager, Map map)
+    public World(Game gameManager, Map map)
     {
-        _gameManager = gameManager;
-        _worldController = new WorldController(_gameManager.InputHandler);
+        _game = gameManager;
+        _worldController = new WorldController(this, _game.InputHandler);
 
-        _entityManager = _gameManager.EntityManager;
+        _entityManager = _game.EntityManager;
         _hero = _entityManager.Hero;
 
         _map = map;
         _mapRenderBase = MapSerializer.Serialize(_map);
 
-        _gameManager.OnGameStateChange += CheckGameState;
-        _gameManager.OnGameConditionChange += CheckGameCondition;
+        _game.OnGameStateChange += CheckGameState;
+        _game.OnGameConditionChange += CheckGameCondition;
 
-        _gameManager.InputHandler.OnKeyPressed += HandleKeyInput;
+        _game.InputHandler.OnKeyPressed += HandleKeyInput;
 
         RegisterKeyHandler(HandleKeyInput);
     }
@@ -61,9 +61,9 @@ public class WorldManager : IGameStateManager
 
     private void RegisterKeyHandler(Action<InputKey> handler)
     {
-        if (!_gameManager.InputHandler.IsHandlerRegistered(handler))
+        if (!_game.InputHandler.IsHandlerRegistered(handler))
         {
-            _gameManager.InputHandler.OnKeyPressed += handler;
+            _game.InputHandler.OnKeyPressed += handler;
         }
     }
 
@@ -106,11 +106,11 @@ public class WorldManager : IGameStateManager
     }
 
     private void CheckGameState() {
-        if (_gameManager.CurrentGameState != GameState.World) _isRunning = false;
+        if (_game.CurrentGameState != GameState.World) _isRunning = false;
     }
 
     private void CheckGameCondition() {
-        if (_gameManager.CurrentGameCondition != GameCondition.None) _isRunning = false;
+        if (_game.CurrentGameCondition != GameCondition.None) _isRunning = false;
     }
 
     
@@ -125,7 +125,7 @@ public class WorldManager : IGameStateManager
                                      enemy.Position.X, enemy.Position.Y))
                     continue;
 
-                _gameManager.CombatInstanceData = new CombatInstanceData(player, enemy);
+                _game.CombatInstanceData = new CombatInstanceData(player, enemy);
                 _gameState = GameState.Combat;
                 return true;
             }

@@ -14,7 +14,7 @@ public enum CombatAction
 public class CombatManager : IGameStateManager
 {
 
-    private GameManager _gameManager;
+    private Game _gameManager;
     private CombatInstanceData? _data;
 
     private Player _hero;
@@ -25,7 +25,7 @@ public class CombatManager : IGameStateManager
 
     private Dictionary<CombatAction, bool> _menu;
 
-    public CombatManager(GameManager gameManager)
+    public CombatManager(Game gameManager)
     {
         _gameManager = gameManager;
         _data = _gameManager.CombatInstanceData;
@@ -50,10 +50,10 @@ public class CombatManager : IGameStateManager
     public void Run()
     {
         _menu = new Dictionary<CombatAction, bool>(){
-            {CombatAction.Attack, true},
-            {CombatAction.Defend, false},
-            {CombatAction.Heal, false},
-            {CombatAction.Escape, false},
+                {CombatAction.Attack, true},
+                {CombatAction.Defend, false},
+                {CombatAction.Heal, false},
+                {CombatAction.Escape, false},
             };
 
         var won = false;
