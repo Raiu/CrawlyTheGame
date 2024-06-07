@@ -9,6 +9,54 @@ class WorldController : IPlayerController
         _inputHandler = inputHandler;
     }
 
+    private void RegisterKeyHandler(Action<InputKey> handler)
+    {
+        if (!_inputHandler.IsHandlerRegistered(handler))
+        {
+            _inputHandler.OnKeyPressed += handler;
+        }
+    }
+
+    /*
+    private void HandleKeyInput(InputKey key)
+    {
+        if (!_isRunning) return;
+
+        if (key == InputKey.None)
+            return;
+
+        switch (key)
+        {
+            case InputKey.Up:
+                if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y - 1), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y - 1));
+                return;
+            case InputKey.Down:
+                if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y + 1), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y + 1));
+                return;
+            case InputKey.Left:
+                if (!ValidMove(new Coordinate(_hero.Position.X - 1, _hero.Position.Y), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X - 1, _hero.Position.Y));
+                return;
+            case InputKey.Right:
+                if (!ValidMove(new Coordinate(_hero.Position.X + 1, _hero.Position.Y), _map, _entityManager.Active))
+                    break;
+                _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
+                return;
+            case InputKey.Esc:
+                Environment.Exit(0);
+                break;
+            default:
+                break;
+
+        }
+    }
+    */
+
     /*
     private void MovePlayer(Map map)
     {

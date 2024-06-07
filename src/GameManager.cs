@@ -55,23 +55,14 @@ public class GameManager
         }
     }
 
-    public void ChangeGameState(GameState newState)
-    {
-        CurrentGameState = newState;
-        OnGameStateChange?.Invoke();
-    }
+    // OnGameStateChange?.Invoke();
+    public void ChangeGameState(GameState newState) => CurrentGameState = newState;
 
-    public void ChangeToPreviousGameState()
-    {
-        CurrentGameState = PreviousGameState;
-        OnGameStateChange?.Invoke();
-    }
+    // OnGameStateChange?.Invoke();
+    public void ChangeToPreviousGameState() => CurrentGameState = PreviousGameState;
 
-    public void ChangeGameCondition(GameCondition newCondition)
-    {
-        CurrentGameCondition = newCondition;
-        OnGameConditionChange?.Invoke();
-    }
+    // OnGameConditionChange?.Invoke();
+    public void ChangeGameCondition(GameCondition newCondition) => CurrentGameCondition = newCondition;
 
     private void CreateNewGame()
     {
