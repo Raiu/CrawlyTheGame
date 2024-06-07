@@ -3,11 +3,26 @@ namespace Crawly;
 
 public class ConsoleInputHandler : IInputHandler
 {
-    // public delegate void OnKeyPressedHandler(InputKey inputKey);
+    private event Action<InputKey>? _onKeyPressed;
 
-    // public event OnKeyPressedHandler? OnKeyPressed;
-    
-    public event Action<InputKey>? OnKeyPressed;
+    public event Action<InputKey>? OnKeyPressed
+    {
+        add
+        {
+            _onKeyPressed += value;
+            StartListening();
+        }
+        remove
+        {
+            _onKeyPressed -= value;
+            StopListening();
+        }
+    }
+
+    private bool _isListening = false;
+    private Thread? _listeningThread;
+    private static int _threadIdCounter = 0;
+    private int _currentThreadId;
 
     private readonly Dictionary<ConsoleKey, InputKey> _keyMap = new()
     {
@@ -31,17 +46,47 @@ public class ConsoleInputHandler : IInputHandler
         { ConsoleKey.D9, InputKey.Nine }
     };
 
-    public void StartListening() {
-        var thread = new Thread(ListenInputKey)
+    private void StartListening()
+    {
+        if (_isListening) return;
+
+        _isListening = true; 
+        _currentThreadId = Interlocked.Increment(ref _threadIdCounter);
+        _listeningThread = new Thread(ListenInputKey)
         {
-            IsBackground = true
+            IsBackground = true,
+            Name = $"ConsoleInputHandlerThread-{_currentThreadId}"
         };
-        thread.Start();
+        _listeningThread.Start();
+    }
+
+    private void StopListening()
+    {
+        if (_onKeyPressed != null) return;
+
+        _isListening = false;
+        _listeningThread?.Join();
+        _listeningThread = null;
+    }
+
+    public bool IsHandlerRegistered(Action<InputKey> prospectiveHandler)
+    {
+        if ( _onKeyPressed != null )
+        {
+            foreach ( Action<InputKey> existingHandler in _onKeyPressed.GetInvocationList() )
+            {
+                if ( existingHandler == prospectiveHandler )
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void ListenInputKey()
     {
-        while (true)
+        while (_isListening)
         {
             if (!Console.KeyAvailable)
             {
@@ -51,7 +96,7 @@ public class ConsoleInputHandler : IInputHandler
 
             var key = Console.ReadKey(true).Key;
             if (_keyMap.TryGetValue(key, out var inputKey))
-                OnKeyPressed?.Invoke(inputKey);
+                _onKeyPressed?.Invoke(inputKey);
         }
     }
 
@@ -74,6 +119,4 @@ public class ConsoleInputHandler : IInputHandler
     public string ReadKey() => Console.ReadKey(true).Key.ToString();
 
     public string ReadLine() => Console.ReadLine() ?? "";
-
-    
 }

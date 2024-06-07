@@ -33,6 +33,8 @@ public class WorldManager : IGameStateManager
         _gameManager.OnGameConditionChange += CheckGameCondition;
 
         _gameManager.InputHandler.OnKeyPressed += HandleKeyInput;
+
+        RegisterKeyHandler(HandleKeyInput);
     }
 
     public void Run()
@@ -57,8 +59,18 @@ public class WorldManager : IGameStateManager
         }
     }
 
+    private void RegisterKeyHandler(Action<InputKey> handler)
+    {
+        if (!_gameManager.InputHandler.IsHandlerRegistered(handler))
+        {
+            _gameManager.InputHandler.OnKeyPressed += handler;
+        }
+    }
+
     private void HandleKeyInput(InputKey key)
     {
+        if (!_isRunning) return;
+
         if (key == InputKey.None)
             return;
 
@@ -85,7 +97,7 @@ public class WorldManager : IGameStateManager
                 _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
                 return;
             case InputKey.Esc:
-                Environment.Exit(1);
+                Environment.Exit(0);
                 break;
             default:
                 break;
@@ -232,7 +244,7 @@ public class WorldManager : IGameStateManager
                     _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
                     return;
                 case InputKey.Esc:
-                    Environment.Exit(1);
+                    Environment.Exit(0);
                     break;
                 default:
                     break;

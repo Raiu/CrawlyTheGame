@@ -23,6 +23,8 @@ public class CombatManager : IGameStateManager
     private CombatAction _actionTaken = CombatAction.None;
     private bool _isRunning;
 
+    private Dictionary<CombatAction, bool> _menu;
+
     public CombatManager(GameManager gameManager)
     {
         _gameManager = gameManager;
@@ -44,8 +46,6 @@ public class CombatManager : IGameStateManager
         _gameManager.InputHandler.OnKeyPressed += HandleKeyInput;
         
     }
-
-    private Dictionary<CombatAction, bool> _menu;
 
     public void Run()
     {

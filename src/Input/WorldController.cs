@@ -42,7 +42,7 @@ class WorldController : IPlayerController
                     _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
                     return;
                 case InputKey.Esc:
-                    Environment.Exit(1);
+                    Environment.Exit(0);
                     break;
                 default:
                     break;
