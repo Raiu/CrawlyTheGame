@@ -1,6 +1,6 @@
 namespace Crawly;
 
-class EntityMovement
+class Compass
 {
     public static Coordinate North => new Coordinate(x: 0, y: -1);
     public static Coordinate South => new Coordinate(x: 0, y: 1);

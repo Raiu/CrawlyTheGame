@@ -37,8 +37,8 @@ public class EntityGenerator
     private Coordinate GenerateRandomPosition(Map map)
     {
         var random = new Random();
-        var posX = random.Next(0, map.EndX);
-        var posY = random.Next(0, map.EndY);
+        var posX = random.Next(0, map.XEndIndex);
+        var posY = random.Next(0, map.YEndIndex);
 
         return new Coordinate(posX, posY);
     }

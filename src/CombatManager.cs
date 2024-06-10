@@ -13,8 +13,12 @@ public enum CombatAction
 
 public class CombatManager : IGameStateManager
 {
-
     private Game _gameManager;
+    private GameTracker _gameTracker;
+
+    private GameState _currentGameState;
+    private GameCondition _currentGameCondition;
+
     private CombatInstanceData? _data;
 
     private Player _hero;
@@ -25,27 +29,33 @@ public class CombatManager : IGameStateManager
 
     private Dictionary<CombatAction, bool> _menu;
 
+    ////////////////////////////////////////////////////////////////////////////////
+
     public CombatManager(Game gameManager)
     {
         _gameManager = gameManager;
-        _data = _gameManager.CombatInstanceData;
+        _gameTracker = _gameManager.GameTracker;
 
-        if (_data != null)
+        _currentGameState = _gameTracker.CurrentGameState;
+        _currentGameCondition = _gameTracker.CurrentGameCondition;
+
+        if (_gameManager.CombatInstanceData != null)
         {
+            _data = _gameManager.CombatInstanceData;
             _hero = _data.Player;
             _enemy = _data.Enemy;
         }
         else
         {
-            _gameManager.ChangeToPreviousGameState();
+            _gameTracker.ChangeToPreviousGameState();
             throw new Exception("no combat data");
         }
 
-        _gameManager.OnGameStateChange += CheckGameState;
-        _gameManager.OnGameConditionChange += CheckGameCondition;
-        _gameManager.InputHandler.OnKeyPressed += HandleKeyInput;
-        
+        _gameTracker.OnGameStateChange += CheckGameState;
+        _gameTracker.OnGameConditionChange += CheckGameCondition;        
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     public void Run()
     {
@@ -118,31 +128,6 @@ public class CombatManager : IGameStateManager
         }
     }
     
-
-
-    private void DoAction<T>(T action, IEntity actor, IEntity target)
-    {
-
-    }
-
-    private Dictionary<T, bool> CycleMenu<T>(Dictionary<T, bool> menu, int steps) where T : notnull
-    {
-        var index = menu.Values.ToList().IndexOf(true);
-
-        if (index == -1)
-            throw new InvalidOperationException("No item with value 'true' found in the menu.");
-
-        var keys = menu.Keys.ToList();
-        menu[keys[index]] = false;
-
-        var newIndex = (index + steps) % keys.Count;
-        newIndex = newIndex < 0 ? newIndex + keys.Count : newIndex;
-
-        menu[keys[newIndex]] = true;
-
-        return menu;
-    }
-
     public void Update()
     {
         throw new NotImplementedException();
@@ -153,12 +138,22 @@ public class CombatManager : IGameStateManager
         throw new NotImplementedException();
     }
 
+    private void GameStateChangeHandler(GameState newGameState, GameState oldGameState)
+    {
+
+    }
+
+    private void GameConditionChangeHandler(GameCondition newGameCondition, GameCondition oldGameCondition)
+    {
+
+    }
+
     private void CheckGameState() {
-        if (_gameManager.CurrentGameState != GameState.Combat) _isRunning = false;
+        if (_gameManager._currentGameState != GameState.Combat) _isRunning = false;
     }
 
     private void CheckGameCondition() {
-        if (_gameManager.CurrentGameCondition != GameCondition.None) _isRunning = false;
+        if (_gameManager._currentGameCondition != GameCondition.None) _isRunning = false;
     }
 
     void IGameStateManager.CheckGameState()

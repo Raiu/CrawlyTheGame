@@ -13,8 +13,8 @@ public interface IGameStateManager
 
     public void Render();
 
-    public void CheckGameState();
+    // public void CheckGameState();
 
-    public void CheckGameCondition();
+    // public void CheckGameCondition();
     
 }

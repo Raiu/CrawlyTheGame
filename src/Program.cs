@@ -4,9 +4,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        IInputHandler inputHandler = new ConsoleInputHandler();
         // Future implementations
         // IRenderHandler renderHandler = new ConsoleRenderHandler();
+        IInputHandler inputHandler = new ConsoleInputHandler();
 
 
         var game = new Game(inputHandler);

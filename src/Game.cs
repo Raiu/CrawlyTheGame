@@ -4,32 +4,10 @@ public class Game
 {
     private bool _isRunning;
     private GameCondition _currentGameCondition;
+    private GameState _previousGameState;
     private GameState _currentGameState;
 
-    public event Action? OnGameStateChange;
-    public event Action? OnGameConditionChange;
-
-    public GameState CurrentGameState
-    { 
-        get => _currentGameState;
-        private set
-        { 
-            _currentGameState = value;
-            OnGameStateChange?.Invoke();
-        }
-    }
-
-    public GameState PreviousGameState { get; private set; }
-
-    public GameCondition CurrentGameCondition
-    { 
-        get => _currentGameCondition;
-        private set
-        { 
-            _currentGameCondition = value;
-            OnGameConditionChange?.Invoke();
-        }
-    }
+    public GameTracker GameTracker { get; private set; }
 
     public IInputHandler InputHandler { get; private set; }
 
@@ -39,23 +17,28 @@ public class Game
 
     public CombatInstanceData? CombatInstanceData { get; set; }
 
+    ////////////////////////////////////////////////////////////////////////////////
+
     public Game(IInputHandler inputHandler)
     {
-        InputHandler = inputHandler;
+        GameTracker = new GameTracker(GameState.MainMenu);
+        _currentGameState = GameTracker.CurrentGameState;
+        _previousGameState = GameTracker.PreviousGameState;
+        _currentGameCondition = GameTracker.CurrentGameCondition;
 
-        CurrentGameState = GameState.MainMenu;
-        PreviousGameState = GameState.None;
-        CurrentGameCondition = GameCondition.None;
+        InputHandler = inputHandler;
 
         StartGame();
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     public void StartGame()
     {
         _isRunning = true;
         while (_isRunning)
         {
-            switch (CurrentGameState)
+            switch (_currentGameState)
             {
                 case GameState.MainMenu:
                     // Placeholder starter
@@ -76,14 +59,15 @@ public class Game
         }
     }
 
-    // OnGameStateChange?.Invoke();
-    public void ChangeGameState(GameState newState) => CurrentGameState = newState;
+    public void Update()
+    {
 
-    // OnGameStateChange?.Invoke();
-    public void ChangeToPreviousGameState() => CurrentGameState = PreviousGameState;
+    }
 
-    // OnGameConditionChange?.Invoke();
-    public void ChangeGameCondition(GameCondition newCondition) => CurrentGameCondition = newCondition;
+    public void Render()
+    {
+        
+    }
 
     private void CreateNewGame()
     {
@@ -92,7 +76,7 @@ public class Game
         NewGame(out Map map, out EntityManager em);
         EntityManager = em;
         World = new(this, map);
-        CurrentGameState = GameState.World;
+        _currentGameState = GameState.World;
     }
 
     private void NewGame(out Map map, out EntityManager em)

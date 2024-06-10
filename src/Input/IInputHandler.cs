@@ -3,15 +3,13 @@ namespace Crawly;
 
 public interface IInputHandler
 {
-    event Action<InputKey> OnKeyPressed;
+    void RegisterKeyPressHandler(Action<InputKey> handleKeyInput);
 
-    bool IsHandlerRegistered(Action<InputKey> handleKeyInput);
+    void UnregisterKeyPressHandler(Action<InputKey> handler);
 
     InputKey ReadInputKey();
 
     string ReadKey();
 
     string ReadLine();
-
-    // void StartListening();
 }

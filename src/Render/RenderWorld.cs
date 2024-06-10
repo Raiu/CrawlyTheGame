@@ -5,37 +5,52 @@ namespace Crawly;
 
 public class RenderWorld : IRender
 {
-    private Map _map;
+    private Map _renderMap;
+    
     private List<IEntity> _entities;
+    
     private Player _player;
 
     private int _viewSize, _viewSizeHalf;
+    
     private int _viewStartX, _viewEndX;
+    
     private int _viewStartY, _viewEndY;
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     public RenderWorld(Map map, List<IEntity> entities, int viewSize)
     {
-        _map = map;
+        _renderMap = map.CreateCopy();
         _entities = entities;
 
-        if (_map.Width < viewSize || _map.Height < viewSize)
+        if (_renderMap.Width < viewSize || _renderMap.Height < viewSize)
             throw new Exception("View size is too big");
         _viewSize = viewSize;
-        _viewSizeHalf = (_viewSize - 1) / 2;
+        _viewSizeHalf = (int)Math.Ceiling((double)(_viewSize - 1) / 2);
 
         var player = _entities.Find(x => x is Player) as Player ??
                 throw new Exception("Player not found");
         _player = player;
 
-        SetWorldView();
+        // var map = new JsonMapSerializer().Deserialize(_mapRenderBase);
+        // map = UpdateTilesWithEntities(EntityManager.Drawables, map);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    private Map UpdateTilesWithEntities(List<IDrawable> entities, Map map)
+    {
+        entities.Where(e => e.IsVisible).ToList().ForEach(e =>
+                map.Tiles[e.Position.X, e.Position.Y].UpdateEnity(e.Body));
+        return map;
     }
 
     public void Draw()
     {
-        Console.Clear();
-        AnsiConsole.Clear();
+        SetWorldView();
 
-        var renderedMap = RenderMapSpectre(_map);
+        var renderedMap = RenderMapSpectre(_renderMap);
 
         var layout = new Layout("Root")
             .SplitColumns(
@@ -49,6 +64,8 @@ public class RenderWorld : IRender
                 .Expand());
         layout["Right"].Update(new Panel(Align.Center(new Markup(GenPlayerString()))));
 
+        AnsiConsole.Clear();
+
         AnsiConsole.Write(layout);
     }
 
@@ -59,33 +76,56 @@ public class RenderWorld : IRender
         _viewEndX = _viewStartX + _viewSize;
         _viewEndY = _viewStartY + _viewSize;
 
-        if (_viewStartX < _map.StartX)
+        if (_viewStartX < _renderMap.XStartIndex)
         {
-            _viewStartX = _map.StartX;
+            _viewStartX = _renderMap.XStartIndex;
             _viewEndX = _viewStartX + _viewSize;
         }
-        if (_viewEndX > _map.EndX)
+        if (_viewEndX > _renderMap.XEndIndex)
         {
-            _viewEndX = _map.EndX;
+            _viewEndX = _renderMap.XEndIndex;
             _viewStartX = _viewEndX - _viewSize;
         }
-        if (_viewStartY < _map.StartY)
+        if (_viewStartY < _renderMap.YStartIndex)
         {
-            _viewStartY = _map.StartY;
+            _viewStartY = _renderMap.YStartIndex;
             _viewEndY = _viewStartY + _viewSize;
         }
-        if (_viewEndY > _map.EndY)
+        if (_viewEndY > _renderMap.YEndIndex)
         {
-            _viewEndY = _map.EndY;
+            _viewEndY = _renderMap.YEndIndex;
             _viewStartY = _viewEndY - _viewSize;
         }
+    }
+
+    private int AdjustViewStart(int start, int min, int max, int size)
+    {
+        var half = (size - 1) / 2;
+        if (start < min)
+            start = min;
+        if (start > max - half)
+            start = max - half;
+        return start;
+    }
+
+    private int AdjustStart(int start, int min, int max, int viewSize)
+    {
+        if (start < min)
+        {
+            return min;
+        }
+        if (start + viewSize > max)
+        {
+            return max - viewSize;
+        }
+        return start;
     }
 
     public void DrawWorld()
     {
         AnsiConsole.Clear();
 
-        var renderedMap = RenderMapSpectre(_map);
+        var renderedMap = RenderMapSpectre(_renderMap);
 
         var layout = new Layout("Root")
             .SplitColumns(

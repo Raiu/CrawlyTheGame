@@ -3,117 +3,79 @@
 public class World : IGameStateManager
 {
     private Game _game;
+    
+    private GameTracker _gameTracker;
 
     private readonly WorldController _worldController;
 
     private JsonMapSerializer MapSerializer = new JsonMapSerializer();
+    
     private Map _map;
+    
     private string _mapRenderBase;
 
-    private EntityManager _entityManager;
+    public EntityManager EntityManager { get; private set; }
+   
     private Player _hero;
 
     private GameCondition _gameCondition;
+   
     private GameState _gameState;
 
     private bool _isRunning;
 
+    ////////////////////////////////////////////////////////////////////////////////
+
     public World(Game gameManager, Map map)
     {
         _game = gameManager;
+        _gameTracker = _game.GameTracker;
+
         _worldController = new WorldController(this, _game.InputHandler);
 
-        _entityManager = _game.EntityManager;
-        _hero = _entityManager.Hero;
+        EntityManager = _game.EntityManager;
+        _hero = EntityManager.Hero;
 
         _map = map;
         _mapRenderBase = MapSerializer.Serialize(_map);
 
-        _game.OnGameStateChange += CheckGameState;
-        _game.OnGameConditionChange += CheckGameCondition;
-
-        _game.InputHandler.OnKeyPressed += HandleKeyInput;
-
-        RegisterKeyHandler(HandleKeyInput);
+        _gameTracker.OnGameStateChange += GameStateChangeHandler;
+        _gameTracker.OnGameConditionChange += GameConditionChangeHandler;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////
 
     public void Run()
     {
         _isRunning = true;
         while (_isRunning)
         {
-            CombatCheck(_hero, _entityManager.Active);
+            CombatCheck(_hero, EntityManager.Active);
 
 
             if (!_isRunning) break;
 
-            var map = new JsonMapSerializer().Deserialize(_mapRenderBase);
-            map = UpdateTilesWithEntities(_entityManager.Drawables, map);
+            
 
-            var render = new RenderWorld(map, _entityManager.Active, 20);
+            var render = new RenderWorld(_map, EntityManager.Active, 20);
             render.Draw();
 
             // MovePlayer(map);
 
-            Thread.Sleep(2000);
+            Thread.Sleep(100);
         }
     }
 
-    private void RegisterKeyHandler(Action<InputKey> handler)
+    private void GameStateChangeHandler(GameState newState, GameState oldState)
     {
-        if (!_game.InputHandler.IsHandlerRegistered(handler))
-        {
-            _game.InputHandler.OnKeyPressed += handler;
-        }
+        if (_game._currentGameState != GameState.World) _isRunning = false;
+
     }
 
-    private void HandleKeyInput(InputKey key)
+    private void GameConditionChangeHandler(GameCondition newCondition, GameCondition oldCondition)
     {
-        if (!_isRunning) return;
-
-        if (key == InputKey.None)
-            return;
-
-        switch (key)
-        {
-            case InputKey.Up:
-                if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y - 1), _map, _entityManager.Active))
-                    break;
-                _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y - 1));
-                return;
-            case InputKey.Down:
-                if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y + 1), _map, _entityManager.Active))
-                    break;
-                _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y + 1));
-                return;
-            case InputKey.Left:
-                if (!ValidMove(new Coordinate(_hero.Position.X - 1, _hero.Position.Y), _map, _entityManager.Active))
-                    break;
-                _hero.Move(new Coordinate(_hero.Position.X - 1, _hero.Position.Y));
-                return;
-            case InputKey.Right:
-                if (!ValidMove(new Coordinate(_hero.Position.X + 1, _hero.Position.Y), _map, _entityManager.Active))
-                    break;
-                _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
-                return;
-            case InputKey.Esc:
-                Environment.Exit(0);
-                break;
-            default:
-                break;
-
-        }
+        if (_game._currentGameCondition != GameCondition.None) _isRunning = false;
     }
-
-    private void CheckGameState() {
-        if (_game.CurrentGameState != GameState.World) _isRunning = false;
-    }
-
-    private void CheckGameCondition() {
-        if (_game.CurrentGameCondition != GameCondition.None) _isRunning = false;
-    }
-
-    
 
     public bool CombatCheck(Player player, List<IEntity> entities)
     {
@@ -134,37 +96,6 @@ public class World : IGameStateManager
         return false;
     }
 
-    private Dictionary<T, bool> CycleMenu<T>(Dictionary<T, bool> menu, int steps) where T : notnull
-    {
-        var index = menu.Values.ToList().IndexOf(true);
-
-        if (index == -1)
-            throw new InvalidOperationException("No item with value 'true' found in the menu.");
-
-        var keys = menu.Keys.ToList();
-        menu[keys[index]] = false;
-
-        var newIndex = (index + steps) % keys.Count;
-        newIndex = newIndex < 0 ? newIndex + keys.Count : newIndex;
-
-        menu[keys[newIndex]] = true;
-
-        return menu;
-    }
-
-    public bool IsAdjacentTiles(int firstX, int firstY, int secondX, int secondY)
-    {
-        return Math.Abs(firstX - secondX) <= 1 && Math.Abs(firstY - secondY) <= 1;
-    }
-
-    public bool IsAdjecent(int x1, int y1, int x2, int y2)
-    {
-        int dx = Math.Abs(x1 - x2);
-        int dy = Math.Abs(y1 - y2);
-
-        return dx <= 1 && dy <= 1 && dx + dy > 0;
-    }
-
     public bool ValidMove(Coordinate position, Map map, List<IEntity> entities)
     {
         if (!IsPositionWithinMap(position.X, position.Y, map.Width, map.Height))
@@ -179,17 +110,6 @@ public class World : IGameStateManager
         return true;
     }
 
-    private Map UpdateTilesWithEntities(List<IDrawable> entities, Map map)
-    {
-        entities.Where(e => e.IsVisible).ToList().ForEach(e =>
-                map.Tiles[e.Position.X, e.Position.Y].UpdateEnity(e.Body));
-        return map;
-    }
-
-    public bool IsPositionWithinMap(int x, int y, int mapWidth, int mapHeight) =>
-            x >= 0 && x < mapWidth && y >= 0 && y < mapHeight;
-
-
     public void Update()
     {
         throw new NotImplementedException();
@@ -200,61 +120,8 @@ public class World : IGameStateManager
         throw new NotImplementedException();
     }
 
-    void IGameStateManager.CheckGameState()
-    {
-        throw new NotImplementedException();
-    }
-
-    void IGameStateManager.CheckGameCondition()
-    {
-        throw new NotImplementedException();
-    }
-
     // Graveyard
     /*
-    private void MovePlayer(Map map)
-    {
-        Input input = new Input();
-        while (true)
-        {
-            var inputKey = input.ReadGameInput();
-            if (inputKey == InputKey.None)
-                continue;
-
-            switch (inputKey)
-            {
-                case InputKey.Up:
-                    if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y - 1), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y - 1));
-                    return;
-                case InputKey.Down:
-                    if (!ValidMove(new Coordinate(_hero.Position.X, _hero.Position.Y + 1), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X, _hero.Position.Y + 1));
-                    return;
-                case InputKey.Left:
-                    if (!ValidMove(new Coordinate(_hero.Position.X - 1, _hero.Position.Y), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X - 1, _hero.Position.Y));
-                    return;
-                case InputKey.Right:
-                    if (!ValidMove(new Coordinate(_hero.Position.X + 1, _hero.Position.Y), map, _entityManager.Active))
-                        break;
-                    _hero.Move(new Coordinate(_hero.Position.X + 1, _hero.Position.Y));
-                    return;
-                case InputKey.Esc:
-                    Environment.Exit(0);
-                    break;
-                default:
-                    break;
-
-            }
-        }
-    }
-
-    private bool ValidEntityPosition(List<IEntity> entities, int posX, int posY) =>
-            !entities.Any(e => e.PosX == posX && e.PosY == posY);
-
+    
     */
 }

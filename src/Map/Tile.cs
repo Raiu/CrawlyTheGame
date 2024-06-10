@@ -23,6 +23,8 @@ public class Tile
         Type = tileType;
     }
 
+    public Tile CreateCopy() => new(Type);
+
     public void UpdateEnity(char body)
     {
         Body = body;

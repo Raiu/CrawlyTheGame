@@ -3,22 +3,7 @@ namespace Crawly;
 
 public class ConsoleInputHandler : IInputHandler
 {
-    private event Action<InputKey>? _onKeyPressed;
-
-    public event Action<InputKey>? OnKeyPressed
-    {
-        add
-        {
-            _onKeyPressed += value;
-            StartListening();
-        }
-        remove
-        {
-            _onKeyPressed -= value;
-            StopListening();
-        }
-    }
-
+    private event Action<InputKey>? _onKeyPress;
     private bool _isListening = false;
     private Thread? _listeningThread;
     private static int _threadIdCounter = 0;
@@ -43,8 +28,27 @@ public class ConsoleInputHandler : IInputHandler
         { ConsoleKey.D6, InputKey.Six },
         { ConsoleKey.D7, InputKey.Seven },
         { ConsoleKey.D8, InputKey.Eight },
-        { ConsoleKey.D9, InputKey.Nine }
+        { ConsoleKey.D9, InputKey.Nine },
     };
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    public void RegisterKeyPressHandler(Action<InputKey> handler)
+    {
+        if (!IsHandlerRegistered(handler, _onKeyPress))
+            return;
+
+        _onKeyPress += handler;
+        StartListening();
+    }
+
+    public void UnregisterKeyPressHandler(Action<InputKey> handler)
+    {
+        _onKeyPress -= handler;
+        StopListening();
+    }
 
     private void StartListening()
     {
@@ -62,29 +66,24 @@ public class ConsoleInputHandler : IInputHandler
 
     private void StopListening()
     {
-        if (_onKeyPressed != null) return;
+        if (_onKeyPress != null) return;
 
         _isListening = false;
         _listeningThread?.Join();
         _listeningThread = null;
     }
 
-    public bool IsHandlerRegistered(Action<InputKey> prospectiveHandler)
+    private bool IsHandlerRegistered<T>(Action<T> prospectiveHandler,  Action<T>? reference)
     {
-        if ( _onKeyPressed != null )
-        {
-            foreach ( Action<InputKey> existingHandler in _onKeyPressed.GetInvocationList() )
-            {
-                if ( existingHandler == prospectiveHandler )
-                {
+        if (reference != null)
+            foreach (Action<T> handler in reference.GetInvocationList().Cast<Action<T>>())
+                if (handler == prospectiveHandler) 
                     return true;
-                }
-            }
-        }
+        
         return false;
     }
 
-    public void ListenInputKey()
+    private void ListenInputKey()
     {
         while (_isListening)
         {
@@ -96,7 +95,7 @@ public class ConsoleInputHandler : IInputHandler
 
             var key = Console.ReadKey(true).Key;
             if (_keyMap.TryGetValue(key, out var inputKey))
-                _onKeyPressed?.Invoke(inputKey);
+                _onKeyPress?.Invoke(inputKey);
         }
     }
 
